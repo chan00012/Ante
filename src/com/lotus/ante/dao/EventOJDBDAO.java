@@ -19,6 +19,9 @@ import com.lotus.ante.validators.Validator;
 import com.lotus.ante.domain.*;
 
 public class EventOJDBDAO implements EventDAO {
+	private final static String WINS = " WINS";
+	private final static String DRAW = "DRAW";
+	private final static String PENDING = "PENDING";
 	
 	public EventOJDBDAO() {
 		try {
@@ -48,10 +51,11 @@ public class EventOJDBDAO implements EventDAO {
 		try {
 			connection = getConnection();
 			statement = connection.
-					prepareStatement("INSERT INTO event(event_code,event_date,event_type) VALUES(?,?,?)");
+					prepareStatement("INSERT INTO event(event_code,event_date,event_type,result) VALUES(?,?,?,?)");
 			statement.setString(1, eventCode);
 			statement.setTimestamp(2, sqlStamp);
 			statement.setString(3, eventType);
+			statement.setString(4, PENDING);
 			statement.executeUpdate();
 		} catch(SQLIntegrityConstraintViolationException e) {
 			throw new SQLIntegrityConstraintViolationException("Event code already exist.");
@@ -126,6 +130,7 @@ public class EventOJDBDAO implements EventDAO {
 				event.setEventDraw(rs.getBoolean("draw"));
 				event.setEventDone(rs.getBoolean("done"));
 				event.setEventSettled(rs.getBoolean("settled"));
+				event.setResult(rs.getString("result"));
 				event.setCompetitors(competitorDao.listCompetitor(event.getEventCode()));
 				eventList.add(event);
 			}
@@ -164,6 +169,7 @@ public class EventOJDBDAO implements EventDAO {
 				event.setEventDraw(rs.getBoolean("draw"));
 				event.setEventDone(rs.getBoolean("done"));
 				event.setEventSettled(rs.getBoolean("settled"));
+				event.setResult(rs.getString("result"));
 				event.setCompetitors(competitorDao.listCompetitor(event.getEventCode()));
 				eventList.add(event);
 			}
@@ -202,6 +208,7 @@ public class EventOJDBDAO implements EventDAO {
 				event.setEventDraw(rs.getBoolean("draw"));
 				event.setEventDone(rs.getBoolean("done"));
 				event.setEventSettled(rs.getBoolean("settled"));
+				event.setResult(rs.getString("result"));
 				event.setCompetitors(competitorDao.listCompetitor(event.getEventCode()));
 			}
 			if(event == null) {
@@ -219,6 +226,7 @@ public class EventOJDBDAO implements EventDAO {
 		return event;
 	}
 
+	
 	@Override
 	public void persist(Event event) {
 		Connection connection = null;
@@ -227,11 +235,12 @@ public class EventOJDBDAO implements EventDAO {
 		try {
 			connection = getConnection();
 			statement = connection.
-					prepareStatement("UPDATE event SET done = ?, draw = ?, winner_id = ? WHERE event_code = ?");
+					prepareStatement("UPDATE event SET done = ?, draw = ?, winner_id = ?, result = ? WHERE event_code = ?");
 			statement.setBoolean(1, true);
 			statement.setBoolean(2, event.isEventDraw());
 			statement.setLong(3, event.getWinner().getCompetitorId());
-			statement.setString(4, event.getEventCode());
+			statement.setString(4, event.getWinner().getCompetitorName() + WINS);
+			statement.setString(5, event.getEventCode());
 			statement.executeUpdate();
 		} catch (SQLException e) {
 			try {
@@ -258,10 +267,11 @@ public class EventOJDBDAO implements EventDAO {
 		try {
 			connection = getConnection();
 			statement = connection.
-					prepareStatement("UPDATE event SET done = ?, draw = ? WHERE event_code = ?");
+					prepareStatement("UPDATE event SET done = ?, draw = ?, result = ? WHERE event_code = ?");
 			statement.setBoolean(1, true);
 			statement.setBoolean(2, true);
-			statement.setString(3, event.getEventCode());
+			statement.setString(3, DRAW);
+			statement.setString(4, event.getEventCode());
 			statement.executeUpdate();
 		} catch (SQLException e) {
 			try {

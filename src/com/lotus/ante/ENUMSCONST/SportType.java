@@ -1,9 +1,19 @@
 package com.lotus.ante.ENUMSCONST;
 
-public enum EventType {
+public enum SportType {
 	
-	FOOT,
-	BASK,
-	BOXI,
-	TENN,
+	FOOT("FOOTBALL"),
+	BASK("BASKETBALL"),
+	BOXI("BOXING"),
+	TENN("TENNIS");
+	
+	private String sport;
+	
+	SportType(String sport) {
+		this.sport = sport;
+	}
+
+	public String getSport() {
+		return sport;
+	}
 }

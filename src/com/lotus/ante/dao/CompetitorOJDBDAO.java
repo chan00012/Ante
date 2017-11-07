@@ -30,6 +30,7 @@ public class CompetitorOJDBDAO implements CompetitorDAO {
 	}
 	
 	public void createCompetitor(String competitor, String eventCode) throws SQLIntegrityConstraintViolationException {
+		competitor = competitor.toUpperCase();
 		Connection connection = null;
 		PreparedStatement statement = null;
 		

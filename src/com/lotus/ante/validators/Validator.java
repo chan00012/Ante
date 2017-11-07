@@ -5,7 +5,7 @@ import java.util.Random;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.lotus.ante.ENUMSCONST.EventType;
+import com.lotus.ante.ENUMSCONST.SportType;
 import com.lotus.ante.customexceptions.*;
 import com.lotus.ante.domain.Event;
 
@@ -25,7 +25,7 @@ public final class Validator {
 			throw new NameException("Name exceeded 20 characters.");
 		}
 		
-		if(!StringUtils.isAlpha(name)) {
+		if(!StringUtils.isAlphaSpace(name)) {
 			throw new NameException("Name must be alpha only.");
 		}
 	}
@@ -90,7 +90,7 @@ public final class Validator {
 		}
 		
 		try {
-			EventType.valueOf(eventType);
+			SportType.valueOf(eventType);
 		} catch(RuntimeException e) {
 			throw new EventTypeException("Event type doesn't exist.");
 		}

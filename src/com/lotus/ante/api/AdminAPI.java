@@ -136,13 +136,6 @@ public class AdminAPI {
 			jsonObject.put("errorMessage", e.getMessage());
 			return Response.status(403).entity(jsonObject.toString()).build();
 		}
-		try {
-			Validator.validateEventType(eventType);
-		} catch (EventTypeException e) {
-			jsonObject.put("success", false);
-			jsonObject.put("errorMessage", e.getMessage());
-			return Response.status(200).entity(jsonObject.toString()).build();
-		}
 		
 		EventDAO eventDao = new EventOJDBDAO();
 		ObjectMapper mapper = new ObjectMapper();
@@ -182,10 +175,12 @@ public class AdminAPI {
 		EventDAO eventDao = new EventOJDBDAO();
 		CompetitorDAO competitorDao = new CompetitorOJDBDAO();
 		try {
+			Validator.validateName(comp1);
+			Validator.validateName(comp2);
 			Validator.validateCode(eventCode);
 			Validator.validateEventType(eventType);
 			eventDao.createEvent(eventCode, eventDate, eventType);
-		} catch (SQLIntegrityConstraintViolationException | ParseException | EventCodeException | EventTypeException | DateException e) {
+		} catch (SQLIntegrityConstraintViolationException | ParseException | EventCodeException | EventTypeException | DateException | NameException e) {
 			jsonObject.put("success", false);
 			jsonObject.put("errorMessage", e.getMessage());
 			return Response.status(200).entity(jsonObject.toString()).build();
@@ -228,6 +223,7 @@ public class AdminAPI {
 		
 		try {
 			eventCode = eventCode.toUpperCase();
+			winner = winner.toUpperCase();
 			Validator.validateCode(eventCode);
 			event = eventDao.retrieveEvent(eventCode);
 			Validator.validateEventDate(event);
@@ -284,7 +280,7 @@ public class AdminAPI {
 		}
 		
 	}
-	
+
 	public void checkUserType() throws AccountTypeException{
 		if(activeConnection == LOGOUT) {
 			throw new AccountTypeException("Invalid account privileges.");

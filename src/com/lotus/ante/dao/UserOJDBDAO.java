@@ -56,4 +56,43 @@ public class UserOJDBDAO implements UserDAO {
 		}
 		return user;
 	}
+
+	@Override
+	public void createCustomer(String username, String password, String firstname, String lastname)
+			throws SQLIntegrityConstraintViolationException {
+		
+		Connection connection = null;
+		PreparedStatement statement = null;
+		
+		try {
+			connection = getConnection();
+			statement = connection.
+					prepareStatement("INSERT INTO users(user_id,username,password,firstname,lastname) VALUES (user_sq.NEXTVAL,?,?,?,?)");
+			statement.setString(1, username);
+			statement.setString(2, password);
+			statement.setString(3, firstname);
+			statement.setString(4, lastname);
+			statement.executeUpdate();
+		} catch(SQLIntegrityConstraintViolationException e){
+			throw new SQLIntegrityConstraintViolationException("Account already exist.");
+		} catch (SQLException e) {
+			try {
+				connection.rollback();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
+			e.printStackTrace();
+		} finally {
+			try {
+				connection.commit();
+				connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		
+	}
+
+
+	
 }

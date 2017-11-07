@@ -1,10 +1,13 @@
 package com.lotus.ante.validators;
 
+import java.util.Date;
 import java.util.Random;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.lotus.ante.ENUMSCONST.EventType;
 import com.lotus.ante.customexceptions.*;
+import com.lotus.ante.domain.Event;
 
 public final class Validator {
 	
@@ -56,7 +59,56 @@ public final class Validator {
 			throw new PasswordException("Password must not exceed 20 characters.");
 		}
 		
+		if(password.contains(" ")) {
+			throw new PasswordException("Password must not contain spaces.");
+		}
 		
+		
+	}
+	
+	public static void validateCode(String eventCode) throws EventCodeException {
+		if(eventCode.length() != 5) {
+			throw new EventCodeException("Event code must be 5 character.");
+		}
+		
+		if(!StringUtils.isAlphanumeric(eventCode)) {
+			throw new EventCodeException("Event code must only be alphanumeric.");
+		}
+		
+		if(eventCode.contains(" ")) {
+			throw new EventCodeException("Event code must not contain space.");
+		}
+		
+		if(eventCode.isEmpty()) {
+			throw new EventCodeException("Event code can't be empty.");
+		}
+	}
+
+	public static void validateEventType(String eventType) throws EventTypeException {
+		if(eventType.isEmpty()) {
+			throw new EventTypeException("Event type can't be empty.");
+		}
+		
+		try {
+			EventType.valueOf(eventType);
+		} catch(RuntimeException e) {
+			throw new EventTypeException("Event type doesn't exist.");
+		}
+	}
+
+	public static void validateInputDate(Date eventDate) throws DateException {
+		if(eventDate.before(new Date())) {
+			throw new DateException("Date already passed.");
+		}
+	}
+	
+	public static void validateEventDate(Event event)throws DateException {
+		if(event.isEventDone() == true) {
+			throw new DateException("Event is already done.");
+		}
+		if(event.getEventDate().compareTo(new Date()) > 0) {
+			throw new DateException("Event not yet started.");
+		}
 	}
 	
 	public static String randomCharGenerator() {

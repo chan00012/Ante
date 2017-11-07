@@ -3,8 +3,7 @@ package com.lotus.ante.domain;
 public class Competitor {
 
 	long competitorId;
-	String competitorName;
-	String eventCode;	
+	String competitorName;	
 
 	
 	
@@ -20,12 +19,5 @@ public class Competitor {
 	public void setCompetitorName(String competitorName) {
 		this.competitorName = competitorName;
 	}
-	public String getEventCode() {
-		return eventCode;
-	}
-	public void setEventCode(String eventCode) {
-		this.eventCode = eventCode;
-	}
-	
 	
 }

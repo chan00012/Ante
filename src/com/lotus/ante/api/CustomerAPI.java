@@ -19,32 +19,50 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.lotus.ante.customexceptions.AccountTypeException;
+import com.lotus.ante.customexceptions.SessionExpiredException;
 import com.lotus.ante.dao.*;
 
 @Path("customer")
 public class CustomerAPI {
 	static boolean activeConnection = false;
+	private final static boolean LOGIN = true;
+	private final static boolean LOGOUT = false;
 	
 	
-	@Path("yolo")
+	@Path("user")
 	@GET
-	public Response yolo() throws JSONException {
+	public Response user() throws JSONException {
 		JSONObject jsonObject = new JSONObject();
 		
-		LoginAPI.loginSession();
-		LoginAPI.checkSessionTime();
-		if(activeConnection == false) {
+		try {
+			LoginAPI.checkSessionTime();
+			checkUserType();
+			
+		} catch (SessionExpiredException | AccountTypeException e) {
+			jsonObject.put("success", false);
+			jsonObject.put("errorMessage", e.getMessage());
 			return Response.status(403).entity(jsonObject.toString()).build();
 		}
 		
-		try {
-			jsonObject.put("success", true);
-		} catch (Exception e) {
-			jsonObject.put("success", false);
-			jsonObject.put("errorMessage", "Cannot save data.");
-		}
-		
+		jsonObject.put("success", true);
 		LoginAPI.resetSession();
 		return Response.status(200).entity(jsonObject.toString()).build();
+	}
+	
+	@Path("user/test")
+	@GET
+	public Response test() throws JSONException {
+		JSONObject jsonObject = new JSONObject();
+		
+		jsonObject.put("success", "here");
+		LoginAPI.resetSession();
+		return Response.status(200).entity(jsonObject.toString()).build();
+	}
+	
+	public void checkUserType() throws AccountTypeException{
+		if(activeConnection == LOGOUT) {
+			throw new AccountTypeException("Invalid account privileges.");
+		}
 	}
 }

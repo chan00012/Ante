@@ -38,25 +38,27 @@ public class LoginAPI {
 		
 		UserDAO userDao = new UserOJDBDAO();
 		User user = null;
-		try {
+	
 			sessionTime = new Date();
-			user = userDao.getUser(username, password);
-			if(user.getAccountType() == ADMIN) {
-				AdminAPI.activeConnection = LOGIN;
-				CustomerAPI.activeConnection = LOGOUT;
-				jsonObject.put("success", true);
-				
-			} else if (user.getAccountType() == CUSTOMER)  {
-				CustomerAPI.activeConnection = LOGIN;
-				AdminAPI.activeConnection = LOGOUT;
-				jsonObject.put("success", true);
-				
+			try {
+				user = userDao.getUser(username, password);
+				if(user.getAccountType() == ADMIN) {
+					AdminAPI.activeConnection = LOGIN;
+					CustomerAPI.activeConnection = LOGOUT;
+					CustomerAPI.currCustomer = null;
+					
+				} else if (user.getAccountType() == CUSTOMER)  {
+					CustomerAPI.activeConnection = LOGIN;
+					AdminAPI.activeConnection = LOGOUT;
+					CustomerAPI.currCustomer = user;
+				}
+			} catch (AccountTypeException e) {
+				jsonObject.put("success", false);
+				jsonObject.put("errorMessage", e.getMessage());
+				return Response.status(200).entity(jsonObject.toString()).build();
 			}
-		} catch (Exception e) {
-			jsonObject.put("success", false);
-			jsonObject.put("errorMessage", "Invalid account.");
-		}
 		
+		jsonObject.put("success", true);	
 		return Response.status(200).entity(jsonObject.toString()).build();
 	}
 

@@ -6,6 +6,7 @@ public class Bet {
 
 	long userId;
 	long betId;
+	String status;
 	String eventCode;
 	String transactionCode;
 	Competitor competitorSelected;
@@ -54,6 +55,12 @@ public class Bet {
 	}
 	public void setWinnings(BigDecimal winnings) {
 		this.winnings = winnings;
+	}
+	public String getStatus() {
+		return status;
+	}
+	public void setStatus(String status) {
+		this.status = status;
 	}
 	
 	

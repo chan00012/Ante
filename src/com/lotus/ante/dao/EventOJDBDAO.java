@@ -15,8 +15,9 @@ import java.util.Date;
 import java.util.List;
 
 import com.lotus.ante.customexceptions.DateException;
-import com.lotus.ante.validators.Validator;
+import com.lotus.ante.customexceptions.EventCodeException;
 import com.lotus.ante.domain.*;
+import com.lotus.ante.validator.Validator;
 
 public class EventOJDBDAO implements EventDAO {
 	private final static String WINS = " WINS";
@@ -186,7 +187,7 @@ public class EventOJDBDAO implements EventDAO {
 	}
 
 	@Override
-	public Event retrieveEvent(String eventCode){
+	public Event retrieveEvent(String eventCode) throws EventCodeException{
 	
 		Connection connection = null;
 		PreparedStatement statement = null;
@@ -212,7 +213,7 @@ public class EventOJDBDAO implements EventDAO {
 				event.setCompetitors(competitorDao.listCompetitor(event.getEventCode()));
 			}
 			if(event == null) {
-				throw new RuntimeException("Event code doesn't exist.");
+				throw new EventCodeException("Event not exist.");
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -235,12 +236,13 @@ public class EventOJDBDAO implements EventDAO {
 		try {
 			connection = getConnection();
 			statement = connection.
-					prepareStatement("UPDATE event SET done = ?, draw = ?, winner_id = ?, result = ? WHERE event_code = ?");
-			statement.setBoolean(1, true);
+					prepareStatement("UPDATE event SET done = ?, draw = ?, settled = ?, winner_id = ?, result = ? WHERE event_code = ?");
+			statement.setBoolean(1, event.isEventDone());
 			statement.setBoolean(2, event.isEventDraw());
-			statement.setLong(3, event.getWinner().getCompetitorId());
-			statement.setString(4, event.getWinner().getCompetitorName() + WINS);
-			statement.setString(5, event.getEventCode());
+			statement.setBoolean(3, event.isEventSettled());
+			statement.setLong(4, event.getWinner().getCompetitorId());
+			statement.setString(5, event.getWinner().getCompetitorName() + WINS);
+			statement.setString(6, event.getEventCode());
 			statement.executeUpdate();
 		} catch (SQLException e) {
 			try {
@@ -257,36 +259,5 @@ public class EventOJDBDAO implements EventDAO {
 				e.printStackTrace();
 			}
 		}	
-	}
-	
-	@Override
-	public void persistDraw(Event event) {
-		Connection connection = null;
-		PreparedStatement statement = null;
-		
-		try {
-			connection = getConnection();
-			statement = connection.
-					prepareStatement("UPDATE event SET done = ?, draw = ?, result = ? WHERE event_code = ?");
-			statement.setBoolean(1, true);
-			statement.setBoolean(2, true);
-			statement.setString(3, DRAW);
-			statement.setString(4, event.getEventCode());
-			statement.executeUpdate();
-		} catch (SQLException e) {
-			try {
-				connection.rollback();
-			} catch (SQLException e1) {
-				e1.printStackTrace();
-			}
-			e.printStackTrace();
-		} finally {
-			try {
-				connection.commit();
-				connection.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		}	
-	}
+	}	
 }

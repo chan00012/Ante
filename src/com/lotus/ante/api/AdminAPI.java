@@ -3,6 +3,7 @@ package com.lotus.ante.api;
 import com.lotus.ante.customexceptions.*;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -26,8 +27,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.lotus.ante.dao.*;
+import com.lotus.ante.domain.Bet;
 import com.lotus.ante.domain.Event;
-import com.lotus.ante.validators.Validator;
+import com.lotus.ante.domain.User;
+import com.lotus.ante.validator.Validator;
 
 @Path("admin")
 public class AdminAPI {
@@ -118,6 +121,8 @@ public class AdminAPI {
 		if(!eventList.isEmpty()) {
 			response = mapper.writeValueAsString(eventList);
 		}
+		
+		LoginAPI.resetSession();
 		return Response.status(200).entity(response).build();
 	}
 	
@@ -146,6 +151,8 @@ public class AdminAPI {
 		if(!eventList.isEmpty()) {
 			response = mapper.writeValueAsString(eventList);
 		}
+		
+		LoginAPI.resetSession();
 		return Response.status(200).entity(response).build();
 	}
 	
@@ -216,25 +223,24 @@ public class AdminAPI {
 			jsonObject.put("errorMessage", e.getMessage());
 			return Response.status(403).entity(jsonObject.toString()).build();
 		}
-		
-		Event event = null;
-		EventDAO eventDao = new EventOJDBDAO();
-		CompetitorDAO competitorDao = new CompetitorOJDBDAO();
-		
+
 		try {
+			EventDAO eventDao = new EventOJDBDAO();
+			CompetitorDAO competitorDao = new CompetitorOJDBDAO();
 			eventCode = eventCode.toUpperCase();
 			winner = winner.toUpperCase();
 			Validator.validateCode(eventCode);
-			event = eventDao.retrieveEvent(eventCode);
+			Event event = eventDao.retrieveEvent(eventCode);
 			Validator.validateEventDate(event);
 			if(winner.compareToIgnoreCase("DRAW") == 0) {
-				eventDao.persistDraw(event);
+				eventDao.persist(event);
 			} else {		
 				event.setWinner(competitorDao.retrieveCompetitor(eventCode, winner));
+				event.setEventDone(true);
 				eventDao.persist(event);
 			}
 			
-		} catch(RuntimeException | EventCodeException | DateException e) {
+		} catch(EventCodeException | DateException | CompetitorException e) {
 			jsonObject.put("success", false);
 			jsonObject.put("errorMessage", e.getMessage());
 			return Response.status(200).entity(jsonObject.toString()).build();
@@ -260,27 +266,149 @@ public class AdminAPI {
 			jsonObject.put("errorMessage", e.getMessage());
 			return Response.status(403).entity(jsonObject.toString()).build();
 		}
-		EventDAO eventDao = new EventOJDBDAO();
-		ObjectMapper mapper = new ObjectMapper();
-		SimpleDateFormat sdf = new SimpleDateFormat("MMM/dd/yyyy hh:mm a");
-		mapper.setDateFormat(sdf);
+		
 		try {
+			EventDAO eventDao = new EventOJDBDAO();
+			ObjectMapper mapper = new ObjectMapper();
+			SimpleDateFormat sdf = new SimpleDateFormat("MMM/dd/yyyy hh:mm a");
+			mapper.setDateFormat(sdf);
 			Validator.validateCode(eventCode);
 			Event event = eventDao.retrieveEvent(eventCode);
 			jsonObject.put("Date", event.getEventDate());
 			jsonObject.put("Competitors", event.getCompetitors());
 			jsonObject.put("Result",event.getResult());
 			jsonObject.put("isSettled", event.isEventSettled());	
-			LoginAPI.resetSession();
-			return Response.status(200).entity(jsonObject.toString()).build();
-		} catch (RuntimeException | EventCodeException e) {
+		} catch (EventCodeException e) {
 			jsonObject.put("success", false);
 			jsonObject.put("errorMessage", e.getMessage());
 			return Response.status(200).entity(jsonObject.toString()).build();
 		}
 		
+		LoginAPI.resetSession();
+		return Response.status(200).entity(jsonObject.toString()).build();
+	}
+	
+	@Path("user/adjust")
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+	public Response adjustBalance(@FormParam("username") String username, @FormParam("amount") String amount) {
+		JSONObject jsonObject = new JSONObject();
+		try {
+			LoginAPI.checkSessionTime();
+			checkUserType();
+			
+		} catch (SessionExpiredException | AccountTypeException e) {
+			jsonObject.put("success", false);
+			jsonObject.put("errorMessage", e.getMessage());
+			return Response.status(403).entity(jsonObject.toString()).build();
+		}
+		try {
+			UserDAO userDao = new UserOJDBDAO();
+			User customer = userDao.getCustomer(username);
+			BigDecimal newBalance = Validator.validateBalance(amount, customer);
+			customer.setBalance(newBalance);
+			userDao.updateBalance(customer);
+		} catch (AccountTypeException | NumberFormatException | BalanceException e) {
+			jsonObject.put("success", false);
+			jsonObject.put("errorMessage", e.getMessage());
+			return Response.status(200).entity(jsonObject.toString()).build();
+		}
+		
+		LoginAPI.resetSession();
+		jsonObject.put("success", true);
+		return Response.status(200).entity(jsonObject.toString()).build();
+	}
+	
+	@Path("bet/show")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response showBets() throws JsonGenerationException, JsonMappingException, IOException {
+		JSONObject jsonObject = new JSONObject();
+		try {
+			LoginAPI.checkSessionTime();
+			checkUserType();
+			
+		} catch (SessionExpiredException | AccountTypeException e) {
+			jsonObject.put("success", false);
+			jsonObject.put("errorMessage", e.getMessage());
+			return Response.status(403).entity(jsonObject.toString()).build();
+		}
+		
+		BetDAO betDao = new BetOJDBDAO();
+		List<Bet> betList = betDao.listBet();
+		ObjectMapper mapper = new ObjectMapper();
+		String response = "{}";
+		if(!betList.isEmpty()) {
+			response = mapper.writeValueAsString(betList);
+		}
+		
+		LoginAPI.resetSession();
+		return Response.status(200).entity(response).build();
+	}
+	
+	@Path("bet/show/{eventcode}")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response showBets(@PathParam("eventcode") String eventCode) throws JsonGenerationException, JsonMappingException, IOException {
+		JSONObject jsonObject = new JSONObject();
+		try {
+			LoginAPI.checkSessionTime();
+			checkUserType();
+			
+		} catch (SessionExpiredException | AccountTypeException e) {
+			jsonObject.put("success", false);
+			jsonObject.put("errorMessage", e.getMessage());
+			return Response.status(403).entity(jsonObject.toString()).build();
+		}
+		
+		eventCode = eventCode.toUpperCase();
+		BetDAO betDao = new BetOJDBDAO();
+		List<Bet> betList = betDao.listBet(eventCode);
+		ObjectMapper mapper = new ObjectMapper();
+		String response = "{}";
+		if(!betList.isEmpty()) {
+			response = mapper.writeValueAsString(betList);
+		} 
+		LoginAPI.resetSession();
+		return Response.status(200).entity(response).build();
 	}
 
+	@Path("bet/show/user/{username}")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response showBetsByUser(@PathParam("username") String username) throws JsonGenerationException, JsonMappingException, IOException {
+		JSONObject jsonObject = new JSONObject();
+		try {
+			LoginAPI.checkSessionTime();
+			checkUserType();
+			
+		} catch (SessionExpiredException | AccountTypeException e) {
+			jsonObject.put("success", false);
+			jsonObject.put("errorMessage", e.getMessage());
+			return Response.status(403).entity(jsonObject.toString()).build();
+		}
+		
+		UserDAO userDao = new UserOJDBDAO();
+		BetDAO betDao = new BetOJDBDAO();
+		User user;
+		try {
+			user = userDao.getCustomer(username);
+		} catch (AccountTypeException e) {
+			jsonObject.put("success", false);
+			jsonObject.put("errorMessage", e.getMessage());
+			return Response.status(200).entity(jsonObject.toString()).build();
+		}
+		List<Bet> betList = betDao.listBet(user.getUserId());
+		ObjectMapper mapper = new ObjectMapper();
+		String response = "{}";
+		if(!betList.isEmpty()) {
+			response = mapper.writeValueAsString(betList);
+		}
+		
+		LoginAPI.resetSession();
+		return Response.status(200).entity(response).build();
+	}
 	public void checkUserType() throws AccountTypeException{
 		if(activeConnection == LOGOUT) {
 			throw new AccountTypeException("Invalid account privileges.");

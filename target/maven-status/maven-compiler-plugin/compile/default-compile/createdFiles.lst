@@ -2,7 +2,6 @@ com\lotus\ante\dao\BetDAO.class
 com\lotus\ante\Implementors\AdminInterface.class
 com\lotus\ante\domain\Bet.class
 com\lotus\ante\domain\User.class
-com\lotus\ante\ENUMSCONST\EventType.class
 com\lotus\ante\dao\CompetitorDAO.class
 com\lotus\ante\api\LoginAPI.class
 com\lotus\ante\customexceptions\PasswordException.class
@@ -14,6 +13,7 @@ com\lotus\ante\dao\EventOJDBDAO.class
 com\lotus\ante\dao\EventDAO.class
 com\lotus\ante\customexceptions\SessionExpiredException.class
 com\lotus\ante\customexceptions\EventTypeException.class
+com\lotus\ante\ENUMSCONST\SportType.class
 com\lotus\ante\api\CustomerAPI.class
 com\lotus\ante\customexceptions\DateException.class
 com\lotus\ante\domain\Event.class

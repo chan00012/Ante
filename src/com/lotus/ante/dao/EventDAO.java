@@ -5,6 +5,7 @@ import java.text.ParseException;
 import java.util.List;
 
 import com.lotus.ante.customexceptions.DateException;
+import com.lotus.ante.customexceptions.EventCodeException;
 import com.lotus.ante.domain.*;
 
 public interface EventDAO {
@@ -13,7 +14,6 @@ public interface EventDAO {
 	void deleteEvent(String eventCode);
 	List<Event> listEvents();
 	List<Event> listEvents(String eventType);
-	Event retrieveEvent(String eventCode);
+	Event retrieveEvent(String eventCode) throws EventCodeException;
 	void persist(Event event);
-	void persistDraw(Event event);
 }

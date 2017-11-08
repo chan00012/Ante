@@ -10,6 +10,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.lotus.ante.customexceptions.CompetitorException;
 import com.lotus.ante.domain.Competitor;
 
 public class CompetitorOJDBDAO implements CompetitorDAO {
@@ -122,7 +123,7 @@ public class CompetitorOJDBDAO implements CompetitorDAO {
 	}
 
 	@Override
-	public Competitor retrieveCompetitor(String eventCode, String winner){
+	public Competitor retrieveCompetitor(String eventCode, String winner) throws CompetitorException{
 		Connection connection = null;
 		PreparedStatement statement = null;
 		ResultSet rs = null;
@@ -142,7 +143,42 @@ public class CompetitorOJDBDAO implements CompetitorDAO {
 			}
 			
 			if(competitor == null) {
-				throw new RuntimeException("Competitor doesn't exist.");
+				throw new CompetitorException("Competitor doesn't exist.");
+			}
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return competitor;
+	}
+
+	@Override
+	public Competitor retrieveCompetitor(long competitorId) throws CompetitorException {
+		Connection connection = null;
+		PreparedStatement statement = null;
+		ResultSet rs = null;
+		Competitor competitor = null;
+		
+		try {
+			connection = getConnection();
+			statement = connection.prepareStatement("SELECT * FROM competitor WHERE competitor_id = ?");
+			statement.setLong(1, competitorId);
+			rs = statement.executeQuery();
+			
+			while(rs.next()) {
+				competitor = new Competitor();
+				competitor.setCompetitorId(rs.getLong("competitor_id"));
+				competitor.setCompetitorName(rs.getString("competitor_name"));
+			}
+			
+			if(competitor == null) {
+				throw new CompetitorException("Competitor doesn't exist.");
 			}
 			
 		} catch (SQLException e) {

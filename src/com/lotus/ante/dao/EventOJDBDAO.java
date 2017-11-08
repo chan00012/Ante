@@ -14,13 +14,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.lotus.ante.customexceptions.CompetitorException;
 import com.lotus.ante.customexceptions.DateException;
 import com.lotus.ante.customexceptions.EventCodeException;
 import com.lotus.ante.domain.*;
 import com.lotus.ante.validator.Validator;
 
 public class EventOJDBDAO implements EventDAO {
-	private final static String WINS = " WINS";
+	private final static String WINS = " WIN";
 	private final static String DRAW = "DRAW";
 	private final static String PENDING = "PENDING";
 	
@@ -124,15 +125,7 @@ public class EventOJDBDAO implements EventDAO {
 			rs = statement.executeQuery("SELECT * FROM event");
 			
 			while(rs.next()) {
-				event = new Event();
-				event.setEventCode(rs.getString("event_code"));
-				event.setEventDate(rs.getTimestamp("event_date"));
-				event.setEventType(rs.getString("event_type"));
-				event.setEventDraw(rs.getBoolean("draw"));
-				event.setEventDone(rs.getBoolean("done"));
-				event.setEventSettled(rs.getBoolean("settled"));
-				event.setResult(rs.getString("result"));
-				event.setCompetitors(competitorDao.listCompetitor(event.getEventCode()));
+				event = extractEvent(rs, competitorDao);
 				eventList.add(event);
 			}
 		} catch (SQLException e) {
@@ -163,15 +156,7 @@ public class EventOJDBDAO implements EventDAO {
 			rs = statement.executeQuery();
 			
 			while(rs.next()) {
-				event = new Event();
-				event.setEventCode(rs.getString("event_code"));
-				event.setEventDate(rs.getTimestamp("event_date"));
-				event.setEventType(rs.getString("event_type"));
-				event.setEventDraw(rs.getBoolean("draw"));
-				event.setEventDone(rs.getBoolean("done"));
-				event.setEventSettled(rs.getBoolean("settled"));
-				event.setResult(rs.getString("result"));
-				event.setCompetitors(competitorDao.listCompetitor(event.getEventCode()));
+				event = extractEvent(rs,competitorDao);
 				eventList.add(event);
 			}
 		} catch (SQLException e) {
@@ -187,7 +172,7 @@ public class EventOJDBDAO implements EventDAO {
 	}
 
 	@Override
-	public Event retrieveEvent(String eventCode) throws EventCodeException{
+	public Event retrieveEvent(String eventCode){
 	
 		Connection connection = null;
 		PreparedStatement statement = null;
@@ -202,19 +187,9 @@ public class EventOJDBDAO implements EventDAO {
 			rs = statement.executeQuery();
 			
 			while(rs.next()) {
-				event = new Event();
-				event.setEventCode(rs.getString("event_code"));
-				event.setEventDate(rs.getTimestamp("event_date"));
-				event.setEventType(rs.getString("event_type"));
-				event.setEventDraw(rs.getBoolean("draw"));
-				event.setEventDone(rs.getBoolean("done"));
-				event.setEventSettled(rs.getBoolean("settled"));
-				event.setResult(rs.getString("result"));
-				event.setCompetitors(competitorDao.listCompetitor(event.getEventCode()));
+				event = extractEvent(rs,competitorDao);
 			}
-			if(event == null) {
-				throw new EventCodeException("Event not exist.");
-			}
+			
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
@@ -227,7 +202,6 @@ public class EventOJDBDAO implements EventDAO {
 		return event;
 	}
 
-	
 	@Override
 	public void persist(Event event) {
 		Connection connection = null;
@@ -240,8 +214,12 @@ public class EventOJDBDAO implements EventDAO {
 			statement.setBoolean(1, event.isEventDone());
 			statement.setBoolean(2, event.isEventDraw());
 			statement.setBoolean(3, event.isEventSettled());
-			statement.setLong(4, event.getWinner().getCompetitorId());
-			statement.setString(5, event.getWinner().getCompetitorName() + WINS);
+			if(event.getWinner() != null) {
+				statement.setLong(4, event.getWinner().getCompetitorId());
+			} else {
+				statement.setLong(4, (0));
+			}
+			statement.setString(5, event.getResult());
 			statement.setString(6, event.getEventCode());
 			statement.executeUpdate();
 		} catch (SQLException e) {
@@ -260,4 +238,19 @@ public class EventOJDBDAO implements EventDAO {
 			}
 		}	
 	}	
+
+	private Event extractEvent(ResultSet rs, CompetitorDAO competitorDao) throws SQLException{
+		Event event;
+		event = new Event();
+		event.setEventCode(rs.getString("event_code"));
+		event.setEventDate(rs.getTimestamp("event_date"));
+		event.setEventType(rs.getString("event_type"));
+		event.setEventDraw(rs.getBoolean("draw"));
+		event.setEventDone(rs.getBoolean("done"));
+		event.setEventSettled(rs.getBoolean("settled"));
+		event.setResult(rs.getString("result"));
+		event.setCompetitors(competitorDao.listCompetitor(event.getEventCode()));
+		event.setWinner(competitorDao.retrieveCompetitor(rs.getLong("winner_id")));
+		return event;
+	}
 }

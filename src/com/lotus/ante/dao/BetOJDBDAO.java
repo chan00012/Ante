@@ -88,15 +88,7 @@ public class BetOJDBDAO implements BetDAO {
 			rs = statement.executeQuery();
 				
 			while(rs.next()) {
-				bet = new Bet();
-				bet.setUserId(rs.getLong("user_id"));
-				bet.setBetId(rs.getLong("bet_id"));
-				bet.setStatus(rs.getString("status"));
-				bet.setEventCode(rs.getString("event_code"));
-				bet.setTransactionCode(rs.getString("transaction_code"));
-				bet.setCompetitorSelected(competitorDao.retrieveCompetitor(rs.getLong("competitor_id")));
-				bet.setBetAmount(rs.getBigDecimal("amount_bet"));
-				bet.setWinnings(rs.getBigDecimal("winnings"));		
+				bet = extractBet(rs, competitorDao);		
 				betList.add(bet);
 			}
 		} catch (SQLException | CompetitorException e) {
@@ -126,15 +118,7 @@ public class BetOJDBDAO implements BetDAO {
 			rs = statement.executeQuery();
 				
 			while(rs.next()) {
-				bet = new Bet();
-				bet.setUserId(rs.getLong("user_id"));
-				bet.setBetId(rs.getLong("bet_id"));
-				bet.setStatus(rs.getString("status"));
-				bet.setEventCode(rs.getString("event_code"));
-				bet.setTransactionCode(rs.getString("transaction_code"));
-				bet.setCompetitorSelected(competitorDao.retrieveCompetitor(rs.getLong("competitor_id")));
-				bet.setBetAmount(rs.getBigDecimal("amount_bet"));
-				bet.setWinnings(rs.getBigDecimal("winnings"));		
+				bet = extractBet(rs, competitorDao);		
 				betList.add(bet);
 			}
 		} catch (SQLException | CompetitorException e) {
@@ -165,15 +149,7 @@ public class BetOJDBDAO implements BetDAO {
 			rs = statement.executeQuery();
 				
 			while(rs.next()) {
-				bet = new Bet();
-				bet.setUserId(rs.getLong("user_id"));
-				bet.setBetId(rs.getLong("bet_id"));
-				bet.setStatus(rs.getString("status"));
-				bet.setEventCode(rs.getString("event_code"));
-				bet.setTransactionCode(rs.getString("transaction_code"));
-				bet.setCompetitorSelected(competitorDao.retrieveCompetitor(rs.getLong("competitor_id")));
-				bet.setBetAmount(rs.getBigDecimal("amount_bet"));
-				bet.setWinnings(rs.getBigDecimal("winnings"));		
+				bet = extractBet(rs, competitorDao);		
 				betList.add(bet);
 			}
 		} catch (SQLException | CompetitorException e) {
@@ -204,15 +180,7 @@ public class BetOJDBDAO implements BetDAO {
 			rs = statement.executeQuery();
 				
 			while(rs.next()) {
-				bet = new Bet();
-				bet.setUserId(rs.getLong("user_id"));
-				bet.setBetId(rs.getLong("bet_id"));
-				bet.setStatus(rs.getString("status"));
-				bet.setEventCode(rs.getString("event_code"));
-				bet.setTransactionCode(rs.getString("transaction_code"));
-				bet.setCompetitorSelected(competitorDao.retrieveCompetitor(rs.getLong("competitor_id")));
-				bet.setBetAmount(rs.getBigDecimal("amount_bet"));
-				bet.setWinnings(rs.getBigDecimal("winnings"));		
+				bet = extractBet(rs, competitorDao);		
 				betList.add(bet);
 			}
 		} catch (SQLException | CompetitorException e) {
@@ -235,7 +203,7 @@ public class BetOJDBDAO implements BetDAO {
 		try {
 			connection = getConnection();
 			statement = connection.
-					prepareStatement("UPDATE bet SET status = ? winnings = ? WHERE bet_id = ?");
+					prepareStatement("UPDATE bet SET status = ?, winnings = ? WHERE bet_id = ?");
 			statement.setString(1, bet.getStatus());
 			statement.setBigDecimal(2, bet.getWinnings());
 			statement.setLong(3, bet.getBetId());
@@ -258,4 +226,17 @@ public class BetOJDBDAO implements BetDAO {
 		
 	}
 
+	private Bet extractBet(ResultSet rs, CompetitorDAO competitorDao) throws SQLException, CompetitorException {
+		Bet bet;
+		bet = new Bet();
+		bet.setUserId(rs.getLong("user_id"));
+		bet.setBetId(rs.getLong("bet_id"));
+		bet.setStatus(rs.getString("status"));
+		bet.setEventCode(rs.getString("event_code"));
+		bet.setTransactionCode(rs.getString("transaction_code"));
+		bet.setCompetitorSelected(competitorDao.retrieveCompetitor(rs.getLong("competitor_id")));
+		bet.setBetAmount(rs.getBigDecimal("amount_bet"));
+		bet.setWinnings(rs.getBigDecimal("winnings"));
+		return bet;
+	}
 }

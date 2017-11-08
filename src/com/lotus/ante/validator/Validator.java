@@ -69,21 +69,23 @@ public final class Validator {
 	}
 	
 	public static void validateCode(String eventCode) throws EventCodeException {
-		if(eventCode.length() != 5) {
-			throw new EventCodeException("Event code must be 5 character.");
-		}
-		
-		if(!StringUtils.isAlphanumeric(eventCode)) {
-			throw new EventCodeException("Event code must only be alphanumeric.");
+		if(eventCode.isEmpty()) {
+			throw new EventCodeException("Event code can't be empty.");
 		}
 		
 		if(eventCode.contains(" ")) {
 			throw new EventCodeException("Event code must not contain space.");
 		}
 		
-		if(eventCode.isEmpty()) {
-			throw new EventCodeException("Event code can't be empty.");
+		
+		if(!StringUtils.isAlphanumeric(eventCode)) {
+			throw new EventCodeException("Event code must only be alphanumeric.");
 		}
+		
+		if(eventCode.length() != 5) {
+			throw new EventCodeException("Event code must be 5 character.");
+		}
+		
 	}
 
 	public static void validateEventType(String eventType) throws EventTypeException {

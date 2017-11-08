@@ -14,21 +14,21 @@ public class SettlementRunner extends Thread {
 	private final static String WIN = "WIN";
 	private final static String LOSE = "LOSE";
 	private final static String DRAW = "DRAW";
+	private final static long FIVEMINUITES = 10000; //300000
 	
 	
 	@Override
 	public void run() {
 		while(true) {
 			try {
+				Thread.sleep(FIVEMINUITES);
 				settlement();
-				Thread.sleep(10000);
 			} catch (InterruptedException | AccountTypeException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 				break;
 			}
 		}
-		System.out.println("Thread stop");
 	}
 	
 	private void settlement() throws AccountTypeException {
@@ -42,7 +42,6 @@ public class SettlementRunner extends Thread {
 				betList = betDao.listBet(event.getEventCode());
 				checkBets(betList, event, betDao);
 				event.setEventSettled(true);
-				eventDao.persist(event);
 			}
 		}
 	}
@@ -53,26 +52,26 @@ public class SettlementRunner extends Thread {
 			long winnerId = event.getWinner().getCompetitorId();
 			UserDAO userDao = new UserOJDBDAO();
 			User customer = userDao.getCustomer(bet.getUserId());
-			
-			if(event.isEventDraw() == true) {
-				bet.setStatus(DRAW);
-				bet.setWinnings(bet.getBetAmount());
-				customer.setBalance(customer.getBalance().add(bet.getWinnings()));
-			}
-		
-			if(chooseCompId == winnerId) {
-				bet.setWinnings(bet.getBetAmount().multiply(new BigDecimal("2")));
-				customer.setBalance(customer.getBalance().add(bet.getWinnings()));
-				bet.setStatus(WIN);
-				event.setResult(event.getWinner().getCompetitorName() + " " + WIN);
-			} else {
-				bet.setWinnings(BigDecimal.ZERO);
-				bet.setStatus(LOSE);
-			}
-			
+			settlementDecision(event, bet, chooseCompId, winnerId, customer);
 			userDao.updateBalance(customer);
 			betDao.persist(bet);
-			CustomerAPI.currCustomer = userDao.getCustomer(CustomerAPI.currCustomer.getUserName());
+		}
+	}
+
+	private void settlementDecision(Event event, Bet bet, long chooseCompId, long winnerId, User customer) {
+		if(event.isEventDraw() == true) {
+			bet.setStatus(DRAW);
+			bet.setWinnings(bet.getBetAmount());
+			customer.setBalance(customer.getBalance().add(bet.getWinnings()));
+		}
+
+		if(chooseCompId == winnerId) {
+			bet.setWinnings(bet.getBetAmount().multiply(new BigDecimal("2")));
+			customer.setBalance(customer.getBalance().add(bet.getWinnings()));
+			bet.setStatus(WIN);
+		} else {
+			bet.setWinnings(BigDecimal.ZERO);
+			bet.setStatus(LOSE);
 		}
 	}
 }

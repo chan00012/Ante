@@ -11,7 +11,7 @@ public interface CompetitorDAO {
 	void createCompetitor(String competitor, String eventCode)throws SQLIntegrityConstraintViolationException;
 	void deleteCompetitors(String eventCode);
 	List<Competitor> listCompetitor(String eventCode);
-	Competitor retrieveCompetitor(String eventCode, String winner) throws CompetitorException;
-	Competitor retrieveCompetitor(long competitorId) throws CompetitorException;
+	Competitor retrieveCompetitor(String eventCode, String winner);
+	Competitor retrieveCompetitor(long competitorId);
 
 }

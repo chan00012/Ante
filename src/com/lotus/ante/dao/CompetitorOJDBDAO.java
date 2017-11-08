@@ -104,9 +104,7 @@ public class CompetitorOJDBDAO implements CompetitorDAO {
 			rs = statement.executeQuery();
 			
 			while(rs.next()) {
-				competitor = new Competitor();
-				competitor.setCompetitorId(rs.getLong("competitor_id"));
-				competitor.setCompetitorName(rs.getString("competitor_name"));
+				competitor = extractCompetitor(rs);
 				competitorList.add(competitor);
 			}
 			
@@ -123,7 +121,7 @@ public class CompetitorOJDBDAO implements CompetitorDAO {
 	}
 
 	@Override
-	public Competitor retrieveCompetitor(String eventCode, String winner) throws CompetitorException{
+	public Competitor retrieveCompetitor(String eventCode, String winner){
 		Connection connection = null;
 		PreparedStatement statement = null;
 		ResultSet rs = null;
@@ -137,13 +135,7 @@ public class CompetitorOJDBDAO implements CompetitorDAO {
 			rs = statement.executeQuery();
 			
 			while(rs.next()) {
-				competitor = new Competitor();
-				competitor.setCompetitorId(rs.getLong("competitor_id"));
-				competitor.setCompetitorName(rs.getString("competitor_name"));
-			}
-			
-			if(competitor == null) {
-				throw new CompetitorException("Competitor doesn't exist.");
+				competitor = extractCompetitor(rs);
 			}
 			
 		} catch (SQLException e) {
@@ -159,7 +151,7 @@ public class CompetitorOJDBDAO implements CompetitorDAO {
 	}
 
 	@Override
-	public Competitor retrieveCompetitor(long competitorId) throws CompetitorException {
+	public Competitor retrieveCompetitor(long competitorId) {
 		Connection connection = null;
 		PreparedStatement statement = null;
 		ResultSet rs = null;
@@ -172,15 +164,9 @@ public class CompetitorOJDBDAO implements CompetitorDAO {
 			rs = statement.executeQuery();
 			
 			while(rs.next()) {
-				competitor = new Competitor();
-				competitor.setCompetitorId(rs.getLong("competitor_id"));
-				competitor.setCompetitorName(rs.getString("competitor_name"));
+				competitor = extractCompetitor(rs);
 			}
-			
-			if(competitor == null) {
-				throw new CompetitorException("Competitor doesn't exist.");
-			}
-			
+					
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}finally {
@@ -190,6 +176,14 @@ public class CompetitorOJDBDAO implements CompetitorDAO {
 				e.printStackTrace();
 			}
 		}
+		return competitor;
+	}
+	
+	private Competitor extractCompetitor(ResultSet rs) throws SQLException {
+		Competitor competitor;
+		competitor = new Competitor();
+		competitor.setCompetitorId(rs.getLong("competitor_id"));
+		competitor.setCompetitorName(rs.getString("competitor_name"));
 		return competitor;
 	}
 

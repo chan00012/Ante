@@ -40,8 +40,14 @@ public class LoginAPI {
 		User user = null;
 	
 			sessionTime = new Date();
-			try {
+		
 				user = userDao.getUser(username, password);
+				if(user == null) {
+					jsonObject.put("success", false);
+					jsonObject.put("errorMessage", "Invalid account.");
+					return Response.status(203).entity(jsonObject.toString()).build();
+				}
+				
 				if(user.getAccountType() == ADMIN) {
 					AdminAPI.activeConnection = LOGIN;
 					CustomerAPI.activeConnection = LOGOUT;
@@ -51,12 +57,7 @@ public class LoginAPI {
 					CustomerAPI.activeConnection = LOGIN;
 					AdminAPI.activeConnection = LOGOUT;
 					CustomerAPI.currCustomer = user;
-				}
-			} catch (AccountTypeException e) {
-				jsonObject.put("success", false);
-				jsonObject.put("errorMessage", e.getMessage());
-				return Response.status(200).entity(jsonObject.toString()).build();
-			}
+				}	
 		
 		jsonObject.put("success", true);	
 		return Response.status(200).entity(jsonObject.toString()).build();

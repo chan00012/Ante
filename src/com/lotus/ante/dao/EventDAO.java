@@ -12,8 +12,8 @@ public interface EventDAO {
 	
 	void createEvent(String eventCode, String eventDate, String eventType) throws ParseException, SQLIntegrityConstraintViolationException, DateException;
 	void deleteEvent(String eventCode);
+	void persist(Event event);
 	List<Event> listEvents();
 	List<Event> listEvents(String eventType);
-	Event retrieveEvent(String eventCode) throws EventCodeException;
-	void persist(Event event);
+	Event retrieveEvent(String eventCode);
 }

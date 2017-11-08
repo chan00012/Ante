@@ -23,7 +23,7 @@ public class UserOJDBDAO implements UserDAO {
 	}
 	
 	@Override
- 	public User getUser(String username, String password) throws AccountTypeException {
+ 	public User getUser(String username, String password) {
 		Connection connection = null;
 		PreparedStatement statement = null;
 		ResultSet rs = null;
@@ -37,18 +37,10 @@ public class UserOJDBDAO implements UserDAO {
 			rs = statement.executeQuery();
 			
 			while(rs.next()) {
-				user = new User();
-				user.setUserId(rs.getLong("user_id"));
-				user.setAccountType(rs.getBoolean("type"));
-				user.setUserName(rs.getString("username"));
-				user.setFirstName(rs.getString("firstname"));
-				user.setLastName(rs.getString("lastname"));
-				user.setBalance(rs.getBigDecimal("balance"));
+				user = extractCustomer(rs);
 			}
 			rs.close();	
-			if(user == null) {
-				throw new AccountTypeException("Account doens't exist.");
-			}
+
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
@@ -78,7 +70,7 @@ public class UserOJDBDAO implements UserDAO {
 			statement.setString(4, lastname);
 			statement.executeUpdate();
 		} catch(SQLIntegrityConstraintViolationException e){
-			throw new SQLIntegrityConstraintViolationException("Account already exist.");
+			throw new SQLIntegrityConstraintViolationException("Username already exist.");
 		} catch (SQLException e) {
 			try {
 				connection.rollback();
@@ -98,7 +90,7 @@ public class UserOJDBDAO implements UserDAO {
 	}
 
 	@Override
-	public User getCustomer(String username) throws AccountTypeException {
+	public User getCustomer(String username) {
 		Connection connection = null;
 		PreparedStatement statement = null;
 		ResultSet rs = null;
@@ -111,19 +103,9 @@ public class UserOJDBDAO implements UserDAO {
 			rs = statement.executeQuery();
 			
 			while(rs.next()) {
-				user = new User();
-				user.setUserId(rs.getLong("user_id"));
-				user.setAccountType(rs.getBoolean("type"));
-				user.setUserName(rs.getString("username"));
-				user.setFirstName(rs.getString("firstname"));
-				user.setLastName(rs.getString("lastname"));
-				user.setBalance(rs.getBigDecimal("balance"));
+				user = extractCustomer(rs);
 			}
 			rs.close();
-			
-			if(user == null) {
-				throw new AccountTypeException("Account doens't exist.");
-			}
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -182,13 +164,7 @@ public class UserOJDBDAO implements UserDAO {
 			rs = statement.executeQuery();
 			
 			while(rs.next()) {
-				user = new User();
-				user.setUserId(rs.getLong("user_id"));
-				user.setAccountType(rs.getBoolean("type"));
-				user.setUserName(rs.getString("username"));
-				user.setFirstName(rs.getString("firstname"));
-				user.setLastName(rs.getString("lastname"));
-				user.setBalance(rs.getBigDecimal("balance"));
+				user = extractCustomer(rs);
 			}
 			rs.close();
 	
@@ -205,4 +181,15 @@ public class UserOJDBDAO implements UserDAO {
 		return user;
 	}
 	
+	private User extractCustomer(ResultSet rs) throws SQLException {
+		User user;
+		user = new User();
+		user.setUserId(rs.getLong("user_id"));
+		user.setAccountType(rs.getBoolean("type"));
+		user.setUserName(rs.getString("username"));
+		user.setFirstName(rs.getString("firstname"));
+		user.setLastName(rs.getString("lastname"));
+		user.setBalance(rs.getBigDecimal("balance"));
+		return user;
+	}
 }

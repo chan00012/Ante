@@ -45,7 +45,7 @@ import oracle.jdbc.dcn.DatabaseChangeEvent.EventType;
 @Path("customer")
 public class CustomerAPI {
 	static boolean activeConnection = false;
-	public static User currCustomer = null;
+	static User currCustomer = null;
 	private final static boolean LOGIN = true;
 	private final static boolean LOGOUT = false;
 	
@@ -59,9 +59,7 @@ public class CustomerAPI {
 			checkUserType();
 			
 		} catch (SessionExpiredException | AccountTypeException e) {
-			jsonObject.put("success", false);
-			jsonObject.put("errorMessage", e.getMessage());
-			return Response.status(403).entity(jsonObject.toString()).build();
+			return responseForbidden(jsonObject, e);
 		}
 		
 		
@@ -84,9 +82,7 @@ public class CustomerAPI {
 			checkUserType();
 			
 		} catch (SessionExpiredException | AccountTypeException e) {
-			jsonObject.put("success", false);
-			jsonObject.put("errorMessage", e.getMessage());
-			return Response.status(403).entity(jsonObject.toString()).build();
+			return responseForbidden(jsonObject, e);
 		}
 		
 		for(SportType st : SportType.values()) {
@@ -95,6 +91,12 @@ public class CustomerAPI {
 		
 		LoginAPI.resetSession();
 		return Response.status(200).entity(jsonObject.toString()).build();
+	}
+
+	private Response responseForbidden(JSONObject jsonObject, Exception e) {
+		jsonObject.put("success", false);
+		jsonObject.put("errorMessage", e.getMessage());
+		return Response.status(403).entity(jsonObject.toString()).build();
 	}
 	
 	@Path("event/{eventtype}")
@@ -108,9 +110,7 @@ public class CustomerAPI {
 			checkUserType();
 			
 		} catch (SessionExpiredException | AccountTypeException e) {
-			jsonObject.put("success", false);
-			jsonObject.put("errorMessage", e.getMessage());
-			return Response.status(403).entity(jsonObject.toString()).build();
+			return responseForbidden(jsonObject, e);
 		}
 	
 		EventDAO eventDao = new EventOJDBDAO();
@@ -141,32 +141,44 @@ public class CustomerAPI {
 						@FormParam("competitor") String comp,
 						@FormParam("stake") String stake) {
 		JSONObject jsonObject = new JSONObject();
+		EventDAO eventDao = new EventOJDBDAO();
+		CompetitorDAO competitorDao = new CompetitorOJDBDAO();
+		BetDAO betDao = new BetOJDBDAO();
+		UserDAO userDao = new UserOJDBDAO();
 		try {
 			LoginAPI.checkSessionTime();
 			checkUserType();
 			
 		} catch (SessionExpiredException | AccountTypeException e) {
-			jsonObject.put("success", false);
-			jsonObject.put("errorMessage", e.getMessage());
-			return Response.status(403).entity(jsonObject.toString()).build();
+			return responseForbidden(jsonObject, e);
 		}
 		
 		try {
-			EventDAO eventDao = new EventOJDBDAO();
-			CompetitorDAO competitorDao = new CompetitorOJDBDAO();
-			BetDAO betDao = new BetOJDBDAO();
-			UserDAO userDao = new UserOJDBDAO();
 			eventCode = eventCode.toUpperCase();
 			comp = comp.toUpperCase();
-			
+			Validator.validateCode(eventCode);
 			Event event = eventDao.retrieveEvent(eventCode);
+			
+			if(event == null) {
+				jsonObject.put("success", false);
+				jsonObject.put("errorMessage", "Event doesn't exist.");
+				return Response.status(200).entity(jsonObject.toString()).build();
+			}
+			
 			Validator.validateBetDate(event);
 			Competitor competitor = competitorDao.retrieveCompetitor(eventCode, comp);
+			
+			if(competitor == null) {
+				jsonObject.put("success", false);
+				jsonObject.put("errorMessage", "Invalid competitor.");
+				return Response.status(200).entity(jsonObject.toString()).build();	
+			}
+			
 			BigDecimal placeStake = Validator.validateStake(stake, currCustomer);
 			betDao.placeBet(currCustomer, event, competitor, placeStake);
 			userDao.updateBalance(currCustomer);
 			
-		} catch (EventCodeException | BalanceException | DateException | SQLIntegrityConstraintViolationException | CompetitorException e) {
+		} catch (BalanceException | DateException | SQLIntegrityConstraintViolationException | EventCodeException e) {
 			jsonObject.put("success", false);
 			jsonObject.put("errorMessage", e.getMessage());
 			return Response.status(200).entity(jsonObject.toString()).build();
@@ -188,9 +200,7 @@ public class CustomerAPI {
 			checkUserType();
 			
 		} catch (SessionExpiredException | AccountTypeException e) {
-			jsonObject.put("success", false);
-			jsonObject.put("errorMessage", e.getMessage());
-			return Response.status(403).entity(jsonObject.toString()).build();
+			return responseForbidden(jsonObject, e);
 		}
 		
 		BetDAO betDao = new BetOJDBDAO();
@@ -217,9 +227,7 @@ public class CustomerAPI {
 			checkUserType();
 			
 		} catch (SessionExpiredException | AccountTypeException e) {
-			jsonObject.put("success", false);
-			jsonObject.put("errorMessage", e.getMessage());
-			return Response.status(403).entity(jsonObject.toString()).build();
+			return responseForbidden(jsonObject, e);
 		}
 		
 		reloadCurrentCustomer();
@@ -232,15 +240,12 @@ public class CustomerAPI {
 	}
 
 	private void reloadCurrentCustomer() {
-		try {
+
 			UserDAO userDao = new UserOJDBDAO();
 			currCustomer = userDao.getCustomer(currCustomer.getUserName());
-		} catch (AccountTypeException e) {
-			e.printStackTrace();
-		}
 	}
 	
-	public void checkUserType() throws AccountTypeException{
+	private void checkUserType() throws AccountTypeException{
 		if(activeConnection == LOGOUT) {
 			throw new AccountTypeException("Invalid account privileges.");
 		}

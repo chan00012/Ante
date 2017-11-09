@@ -1,8 +1,9 @@
 package com.lotus.ante.dao;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import com.lotus.ante.customexceptions.AccountTypeException;
 import com.lotus.ante.domain.User;
 
 public class UserOJDBDAO implements UserDAO {
@@ -191,5 +192,80 @@ public class UserOJDBDAO implements UserDAO {
 		user.setLastName(rs.getString("lastname"));
 		user.setBalance(rs.getBigDecimal("balance"));
 		return user;
+	}
+
+	@Override
+	public List<User> listCustomer() {
+		Connection connection = null;
+		Statement statement = null;
+		ResultSet rs = null;
+		User customer = null;
+		List<User> customerList = new ArrayList<>();
+		
+		try {
+			connection = getConnection();
+			statement = connection.createStatement();
+			rs = statement.executeQuery("SELECT * FROM users WHERE type = 0");
+			
+			while(rs.next()) {
+				customer = extractCustomerExPass(rs);
+				customerList.add(customer);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return customerList;
+	}
+
+
+	@Override
+	public List<User> listCustomer(String query) {
+		Connection connection = null;
+		PreparedStatement statement = null;
+		ResultSet rs = null;
+		User customer = null;
+		List<User> customerList = new ArrayList<>();
+		
+		try {
+			connection = getConnection();
+			statement = connection.
+					prepareStatement("SELECT * FROM users WHERE type = 0 AND (firstname = ? OR lastname = ? or username = ?)");
+			statement.setString(1, query);
+			statement.setString(2, query);
+			statement.setString(3, query);
+			rs = statement.executeQuery();
+			
+			while(rs.next()) {
+				customer = extractCustomerExPass(rs);
+				customerList.add(customer);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return customerList;
+	}
+	
+	private User extractCustomerExPass(ResultSet rs) throws SQLException {
+		User customer;
+		customer = new User();
+		customer.setUserId(rs.getLong("user_id"));
+		customer.setUserName(rs.getString("username"));
+		customer.setFirstName(rs.getString("firstname"));
+		customer.setLastName(rs.getString("lastname"));
+		customer.setAccountType(rs.getBoolean("type"));
+		customer.setBalance(rs.getBigDecimal("balance"));
+		return customer;
 	}
 }

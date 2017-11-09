@@ -5,7 +5,6 @@ import java.text.ParseException;
 import java.util.List;
 
 import com.lotus.ante.customexceptions.DateException;
-import com.lotus.ante.customexceptions.EventCodeException;
 import com.lotus.ante.domain.*;
 
 public interface EventDAO {

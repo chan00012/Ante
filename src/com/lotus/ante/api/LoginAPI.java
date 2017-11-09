@@ -1,25 +1,19 @@
 package com.lotus.ante.api;
 
-import com.lotus.ante.customexceptions.*;
 import java.util.Date;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.json.JSONException;
+
 import org.json.JSONObject;
 
 import com.lotus.ante.dao.*;
 import com.lotus.ante.domain.User;
+import com.lotus.ante.customexceptions.*;
 
 @Path("login")
 public class LoginAPI {
@@ -49,18 +43,26 @@ public class LoginAPI {
 				}
 				
 				if(user.getAccountType() == ADMIN) {
-					AdminAPI.activeConnection = LOGIN;
-					CustomerAPI.activeConnection = LOGOUT;
-					CustomerAPI.currCustomer = null;
+					loginAdmin();
 					
 				} else if (user.getAccountType() == CUSTOMER)  {
-					CustomerAPI.activeConnection = LOGIN;
-					AdminAPI.activeConnection = LOGOUT;
-					CustomerAPI.currCustomer = user;
+					loginCustomer(user);
 				}	
 		
 		jsonObject.put("success", true);	
 		return Response.status(200).entity(jsonObject.toString()).build();
+	}
+
+	private void loginCustomer(User user) {
+		CustomerAPI.activeConnection = LOGIN;
+		AdminAPI.activeConnection = LOGOUT;
+		CustomerAPI.currCustomer = user;
+	}
+
+	private void loginAdmin() {
+		AdminAPI.activeConnection = LOGIN;
+		CustomerAPI.activeConnection = LOGOUT;
+		CustomerAPI.currCustomer = null;
 	}
 
 	static void checkSessionTime() throws SessionExpiredException {

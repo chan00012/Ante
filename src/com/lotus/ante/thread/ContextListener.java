@@ -1,5 +1,4 @@
 package com.lotus.ante.thread;
-import java.util.EventListener;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;

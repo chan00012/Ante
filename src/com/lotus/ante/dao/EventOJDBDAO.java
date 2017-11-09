@@ -14,15 +14,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import com.lotus.ante.customexceptions.CompetitorException;
 import com.lotus.ante.customexceptions.DateException;
-import com.lotus.ante.customexceptions.EventCodeException;
 import com.lotus.ante.domain.*;
 import com.lotus.ante.validator.Validator;
 
 public class EventOJDBDAO implements EventDAO {
-	private final static String WINS = " WIN";
-	private final static String DRAW = "DRAW";
 	private final static String PENDING = "PENDING";
 	
 	public EventOJDBDAO() {

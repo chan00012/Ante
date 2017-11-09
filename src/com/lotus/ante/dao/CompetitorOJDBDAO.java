@@ -6,11 +6,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
-import java.text.ParseException;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import com.lotus.ante.customexceptions.CompetitorException;
 import com.lotus.ante.domain.Competitor;
 
 public class CompetitorOJDBDAO implements CompetitorDAO {

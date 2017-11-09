@@ -55,7 +55,7 @@ public class UserOJDBDAO implements UserDAO {
 	}
 
 	@Override
-	public void createCustomer(String username, String password, String firstname, String lastname)
+	public void createCustomer(String username, String password, String firstname, String lastname, boolean acctType)
 			throws SQLIntegrityConstraintViolationException {
 		
 		Connection connection = null;
@@ -64,11 +64,12 @@ public class UserOJDBDAO implements UserDAO {
 		try {
 			connection = getConnection();
 			statement = connection.
-					prepareStatement("INSERT INTO users(user_id,username,password,firstname,lastname) VALUES (user_sq.NEXTVAL,?,?,?,?)");
+					prepareStatement("INSERT INTO users(user_id,username,password,firstname,lastname,type) VALUES (user_sq.NEXTVAL,?,?,?,?,?)");
 			statement.setString(1, username);
 			statement.setString(2, password);
 			statement.setString(3, firstname);
 			statement.setString(4, lastname);
+			statement.setBoolean(5, acctType);
 			statement.executeUpdate();
 		} catch(SQLIntegrityConstraintViolationException e){
 			throw new SQLIntegrityConstraintViolationException("Username already exist.");

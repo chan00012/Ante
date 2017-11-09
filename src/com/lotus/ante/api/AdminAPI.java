@@ -57,7 +57,8 @@ public class AdminAPI extends AdminApiImpl {
 	public Response requestCreateCustomer(@FormParam("username") String username,
 								   		  @FormParam("password") String password,
 								   		  @FormParam("firstname") String firstname,
-								   		  @FormParam("lastname") String lastname) throws JSONException {
+								   		  @FormParam("lastname") String lastname,
+								   		  @FormParam("accttype") String type) throws JSONException {
 		try {
 			LoginAPI.checkSessionTime();
 			checkUserType();
@@ -66,7 +67,7 @@ public class AdminAPI extends AdminApiImpl {
 			return responseForbidden(e);
 		}
 		
-		return createCustomer(username, password, firstname, lastname);
+		return createCustomer(username, password, firstname, lastname, type);
 	}
 
 	@Path("customer")
@@ -119,13 +120,9 @@ public class AdminAPI extends AdminApiImpl {
 		} catch (SessionExpiredException | AccountTypeException e) {
 			return responseForbidden(e);
 		}
-		
-		try {
-			return adjustBalance(username, amount);
-			
-		} catch (NumberFormatException | BalanceException | UsernameException e) {
-			return responseFail(e);
-		}
+
+		return adjustBalance(username, amount);
+	
 	}
 
 	@Path("event")
@@ -206,7 +203,6 @@ public class AdminAPI extends AdminApiImpl {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response requesViewResult(@PathParam("eventcode") String eventCode) {
 		eventCode = eventCode.toUpperCase();
-		JSONObject jsonObject = new JSONObject();
 		try {
 			LoginAPI.checkSessionTime();
 			checkUserType();
@@ -215,11 +211,11 @@ public class AdminAPI extends AdminApiImpl {
 			return responseForbidden(e);
 		}
 		
-		return viewResult(eventCode, jsonObject);
+		return viewResult(eventCode);
 		
 	}
 
-	@Path("bet/show")
+	@Path("bet")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response showBets() throws JsonGenerationException, JsonMappingException, IOException {
@@ -236,7 +232,7 @@ public class AdminAPI extends AdminApiImpl {
 		return showBetList(betList);
 	}
 
-	@Path("bet/show/{eventcode}")
+	@Path("bet/{eventcode}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response showBets(@PathParam("eventcode") String eventCode) throws JsonGenerationException, JsonMappingException, IOException {
@@ -254,7 +250,7 @@ public class AdminAPI extends AdminApiImpl {
 		return showBetList(betList);
 	}
 
-	@Path("bet/show/user/{username}")
+	@Path("bet/user/{username}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response showBetsByUser(@PathParam("username") String username) throws JsonGenerationException, JsonMappingException, IOException {
@@ -270,10 +266,7 @@ public class AdminAPI extends AdminApiImpl {
 		User user = userDao.getCustomer(username);
 		
 		if(user == null) {
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("success", false);
-			jsonObject.put("errorMessage", "User does not exist.");
-			return Response.status(200).entity(jsonObject.toString()).build();
+			return Response.status(200).entity("{}").build();
 		} else {
 			BetDAO betDao = new BetOJDBDAO();
 			List<Bet> betList = betDao.listBet(user.getUserId());

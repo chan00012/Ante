@@ -13,7 +13,7 @@ public class SettlementRunner extends Thread {
 	private final static String WIN = "WIN";
 	private final static String LOSE = "LOSE";
 	private final static String DRAW = "DRAW";
-	private final static long FIVEMINUITES = 1000; //300000
+	private final static long FIVEMINUITES = 300000; 
 	
 	
 	@Override

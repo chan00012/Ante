@@ -14,6 +14,7 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.json.JSONObject;
 
+import com.lotus.ante.customexceptions.AccountTypeException;
 import com.lotus.ante.customexceptions.BalanceException;
 import com.lotus.ante.customexceptions.DateException;
 import com.lotus.ante.customexceptions.EventCodeException;
@@ -35,40 +36,42 @@ import com.lotus.ante.validator.Validator;
 
 public abstract class AdminApiImpl {
 	
-	protected Response createCustomer(String username, String password, String firstname, String lastname) {
+	protected Response createCustomer(String username, String password, String firstname, String lastname, String type) {
 		try {
 			Validator.validateUsername(username);
 			Validator.validatePassword(password);
 			Validator.validateName(firstname);
 			Validator.validateName(lastname);
+			boolean acctType = Validator.validateAccountType(type);
 			UserDAO userDao = new UserOJDBDAO();
-			userDao.createCustomer(username, password, firstname, lastname);
-		} catch (SQLIntegrityConstraintViolationException | UsernameException | PasswordException | NameException e) {
+			userDao.createCustomer(username, password, firstname, lastname, acctType);
+		} catch (SQLIntegrityConstraintViolationException | UsernameException | PasswordException | NameException | AccountTypeException e) {
 			return responseFail(e);
 		}	
 		return responseSuccess();
 	}
 	
-	protected Response adjustBalance(String username, String amount) throws UsernameException, BalanceException {
-		JSONObject jsonObject = new JSONObject();
-		Validator.validateUsername(username);
+	protected Response adjustBalance(String username, String amount) {
 		UserDAO userDao = new UserOJDBDAO();
 		User customer = userDao.getCustomer(username);
 		
 		if(customer == null) {
-			jsonObject.put("success", false);
-			jsonObject.put("errorMessage", "User does not exist.");
-			return Response.status(200).entity(jsonObject.toString()).build();
+			return responseFail("Customer doesn't Exist");
+			
 		} else {
-			BigDecimal newBalance = Validator.validateBalance(amount, customer);
-			customer.setBalance(newBalance);
-			userDao.updateBalance(customer);
+			try {
+				BigDecimal newBalance;
+				newBalance = Validator.validateBalance(amount, customer);
+				customer.setBalance(newBalance);
+				userDao.updateBalance(customer);
+			} catch (NumberFormatException | BalanceException e) {
+				return responseFail(e);
+			}
 			return responseSuccess();
 		}
 	}
 	
 	protected Response createEvent(String eventCode, String eventDate, String eventType, String comp1, String comp2) {
-		JSONObject jsonObject = new JSONObject();
 		EventDAO eventDao = new EventOJDBDAO();
 		CompetitorDAO competitorDao = new CompetitorOJDBDAO();
 		try {
@@ -88,9 +91,7 @@ public abstract class AdminApiImpl {
 			competitorDao.createCompetitor(comp2, eventCode);
 		} catch (SQLIntegrityConstraintViolationException e) {
 			eventDao.deleteEvent(eventCode);
-			jsonObject.put("success", false);
-			jsonObject.put("errorMessage", e.getMessage());
-			return Response.status(200).entity(jsonObject.toString()).build();
+			return responseFail(e);
 		}
 		
 		return responseSuccess();
@@ -98,9 +99,7 @@ public abstract class AdminApiImpl {
 	
 	protected Response specifyWinner(String eventCode, String winner) {
 		try {
-			JSONObject jsonObject = new JSONObject();
 			EventDAO eventDao = new EventOJDBDAO();
-			CompetitorDAO competitorDao = new CompetitorOJDBDAO();
 			
 			eventCode = eventCode.toUpperCase();
 			winner = winner.toUpperCase();
@@ -111,51 +110,40 @@ public abstract class AdminApiImpl {
 			if(winner.compareToIgnoreCase("DRAW") == 0) {
 				event.setResult("DRAW");
 				event.setEventDraw(true);
+				event.setEventDone(true);
+				eventDao.persist(event);
+				return responseSuccess();
 			} else {		
-				Competitor competitor = competitorDao.retrieveCompetitor(eventCode, winner);
-				if(competitor == null) {
-					jsonObject.put("success", false);
-					jsonObject.put("errorMessage", "Invalid competitor");
-					return Response.status(200).entity(jsonObject.toString()).build();
-				}
-				event.setWinner(competitor);
-				event.setResult(event.getWinner().getCompetitorName() + " WINS");
+				return setWinner(eventCode, winner, event);
 			}
-			event.setEventDone(true);
-			eventDao.persist(event);
 			
 		} catch(EventCodeException | DateException e) {
 			return responseFail(e);
 		}
 		
-		return responseSuccess();
 	}
-	
-	protected Response viewResult(String eventCode, JSONObject jsonObject) {
-		try {
+
+	protected Response viewResult(String eventCode ) {
+			JSONObject jsonObject = new JSONObject();
 			EventDAO eventDao = new EventOJDBDAO();
-			ObjectMapper mapper = new ObjectMapper();
-			SimpleDateFormat sdf = new SimpleDateFormat("MMM/dd/yyyy hh:mm a");
-			mapper.setDateFormat(sdf);
-			Validator.validateCode(eventCode);
 			Event event = eventDao.retrieveEvent(eventCode);
+			SimpleDateFormat sdf = new SimpleDateFormat("MMM/dd/yyyy hh:mm a");
 			
 			if(event == null) {
-				jsonObject.put("success", false);
-				jsonObject.put("errorMessage", "Event doesn't exist.");
-				return Response.status(200).entity(jsonObject.toString()).build();
-			} else {		
-				jsonObject.put("Date", event.getEventDate());
+				return Response.status(200).entity("{}").build();
+			} else {	
+				String dateStr = sdf.format(event.getEventDate());
+				jsonObject.put("Date", dateStr);
 				jsonObject.put("Competitors", event.getCompetitors());
 				jsonObject.put("Result",event.getResult());
 				jsonObject.put("isSettled", event.isEventSettled());
+			
+				
 				LoginAPI.resetSession();
 				return Response.status(200).entity(jsonObject.toString()).build();
 			}
 			
-		} catch (EventCodeException e) {
-			return responseFail(e);
-		}
+		
 	}
 	
 	protected Response showBetList(List<Bet> betList) throws IOException, JsonGenerationException, JsonMappingException {
@@ -169,8 +157,7 @@ public abstract class AdminApiImpl {
 		return Response.status(200).entity(response).build();
 	}
 	
-	protected Response showEventList(List<Event> eventList)
-			throws IOException, JsonGenerationException, JsonMappingException {
+	protected Response showEventList(List<Event> eventList) throws IOException, JsonGenerationException, JsonMappingException {
 		ObjectMapper mapper = new ObjectMapper();
 		SimpleDateFormat sdf = new SimpleDateFormat("MMM/dd/yyyy hh:mm a");
 		mapper.setDateFormat(sdf);	
@@ -183,8 +170,7 @@ public abstract class AdminApiImpl {
 		return Response.status(200).entity(response).build();
 	}
 	
-	protected Response showCustomerList(List<User> customerList)
-			throws IOException, JsonGenerationException, JsonMappingException {
+	protected Response showCustomerList(List<User> customerList) throws IOException, JsonGenerationException, JsonMappingException {
 		ObjectMapper mapper = new ObjectMapper();
 		String response = "{}";
 		if(!customerList.isEmpty()) {
@@ -210,11 +196,34 @@ public abstract class AdminApiImpl {
 		return Response.status(200).entity(jsonObject.toString()).build();
 	}
 	
+	protected Response responseFail(String errMsg) {
+		LoginAPI.resetSession();
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("success", false);
+		jsonObject.put("errorMessage", errMsg);
+		return Response.status(200).entity(jsonObject.toString()).build();
+	}
+	
 	protected Response responseSuccess() {
 		JSONObject jsonObject = new JSONObject();
 		LoginAPI.resetSession();
 		jsonObject.put("success", true);
 		return Response.status(200).entity(jsonObject.toString()).build();
+	}
+	
+	private Response setWinner(String eventCode, String winner, Event event) {
+		EventDAO eventDao = new EventOJDBDAO();
+		CompetitorDAO competitorDao = new CompetitorOJDBDAO();
+		Competitor competitor = competitorDao.retrieveCompetitor(eventCode, winner);
+		if(competitor == null) {
+			return responseFail("Invalid competitor.");
+		} else {
+			event.setWinner(competitor);
+			event.setResult(event.getWinner().getCompetitorName() + " WINS");
+			event.setEventDone(true);
+			eventDao.persist(event);
+			return responseSuccess();
+		}
 	}
 	
 

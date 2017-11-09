@@ -121,6 +121,16 @@ public final class Validator {
 		}
 	}
 	
+	public static boolean validateAccountType(String type) throws AccountTypeException {
+		if(type.equalsIgnoreCase("admin")) {
+			return true;
+		} else if(type.equalsIgnoreCase("customer")) {
+			return false;
+		} else {
+			throw new AccountTypeException("Invalid account type.");
+		}
+	}
+	
 	public static BigDecimal validateBalance(String input, User customer) throws BalanceException {
 		
 		BigDecimal balance = checkIfDouble(input);

@@ -68,21 +68,14 @@ public abstract class CustomerApiImpl {
 			User customer = userDao.getCustomer(currCustomer.getUserId());
 			
 			if(event == null) {
-				LoginAPI.resetSession();
-				JSONObject jsonObject = new JSONObject();
-				jsonObject.put("success", false);
-				jsonObject.put("errorMessage", "Event doesn't exist.");
-				return Response.status(200).entity(jsonObject.toString()).build();
+				return responseFail("Event doesn't exist.");
 				
 			} else {	
 				return proceedBet(eventCode, comp, stake, event, customer);
 			}
 			
 		} catch (BalanceException | DateException | SQLIntegrityConstraintViolationException | EventCodeException e) {
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("success", false);
-			jsonObject.put("errorMessage", e.getMessage());
-			return Response.status(200).entity(jsonObject.toString()).build();
+				return responseFail(e);
 		}		
 		
 	}
@@ -92,13 +85,6 @@ public abstract class CustomerApiImpl {
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("success", true);
 		return Response.status(200).entity(jsonObject.toString()).build();
-	}
-	
-	protected Response responseForbidden(Exception e) {
-		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("success", false);
-		jsonObject.put("errorMessage", e.getMessage());
-		return Response.status(403).entity(jsonObject.toString()).build();
 	}
 	
 	protected Response showBalance(User customer) {
@@ -118,6 +104,29 @@ public abstract class CustomerApiImpl {
 		
 		LoginAPI.resetSession();
 		return Response.status(200).entity(response).build();
+	}
+	
+	protected Response responseForbidden(Exception e) {
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("success", false);
+		jsonObject.put("errorMessage", e.getMessage());
+		return Response.status(403).entity(jsonObject.toString()).build();
+	}
+	
+	protected Response responseFail(Exception e) {
+		LoginAPI.resetSession();
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("success", false);
+		jsonObject.put("errorMessage", e.getMessage());
+		return Response.status(200).entity(jsonObject.toString()).build();
+	}
+	
+	protected Response responseFail(String errMsg) {
+		LoginAPI.resetSession();
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("success", false);
+		jsonObject.put("errorMessage", errMsg);
+		return Response.status(200).entity(jsonObject.toString()).build();
 	}
 	
 	private Response proceedBet(String eventCode, String comp, String stake, Event event , User customer) throws DateException, BalanceException, SQLIntegrityConstraintViolationException {

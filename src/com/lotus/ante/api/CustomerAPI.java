@@ -89,7 +89,7 @@ public class CustomerAPI extends CustomerApiImpl {
 		return showEventsByType(eventType);
 	}
 
-	@Path("event/bet")
+	@Path("bet")
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -107,7 +107,7 @@ public class CustomerAPI extends CustomerApiImpl {
 		return bet(eventCode, comp, stake, currCustomer);
 	}
 
-	@Path("event/bet/show")
+	@Path("bet/show")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response showBet() throws JsonGenerationException, JsonMappingException, IOException {
@@ -139,7 +139,6 @@ public class CustomerAPI extends CustomerApiImpl {
 		
 		UserDAO userDao = new UserOJDBDAO();
 		User customer = userDao.getCustomer(currCustomer.getUserId());
-		System.out.println(customer.getBalance());
 		return showBalance(customer);
 	}
 
